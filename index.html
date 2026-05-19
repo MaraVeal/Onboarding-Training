@@ -9179,6 +9179,8 @@ const state = {
   selectedSite: "",       // dashboard site picker — auto-set from Calendly if possible, else user-picked
   calendlyBookedAt: null, // ISO timestamp of the most recent Calendly confirmation
   calendlyHostName: "", // rep/host name pulled from the Calendly payload, when available
+  unansweredQuestions: [], // questions Foodie couldn't answer — emailed to the Fooda rep when training completes
+  unansweredEmailSent: false, // dedupe flag so we only ever email Faith once per trainee
   dismissedPopups: new Set()  // keys ("equipment", "pos-walkthrough") of intro popups the user has already dismissed this session
 };
 
@@ -9303,6 +9305,16 @@ document.querySelectorAll(".lang-toggle button").forEach(b => {
    row to the "Quiz Responses" tab of the linked Google Sheet.
    ====================================================================== */
 const QUIZ_WEBHOOK_URL = "https://default09766185818c4f768cf79cc3d7c312.d5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5c221a97949e4c98ba5061e12197c241/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cNqXJpYXJLZEES432DEs1yOjIY3c6gZxc50SMELuYSg";
+
+// ====================================================================
+// UNANSWERED QUESTIONS WEBHOOK — emails the trainee's Foodie-stumped
+// questions to Faith Gillman (Fooda rep) when the trainee books their
+// Calendly call. SET THIS to a Power Automate / Apps Script / email-service
+// URL that accepts POST with text/plain body. Leave as the empty string
+// to disable the email step (the questions are still captured locally
+// and would be available for any future export).
+// ====================================================================
+const UNANSWERED_QUESTIONS_WEBHOOK_URL = "";
 const VENDOR_KEY = "fooda_trainer_user";
 
 function getVendorIdentity() {
@@ -9360,6 +9372,8 @@ function saveProgress() {
       selectedSite: state.selectedSite || "",
       calendlyBookedAt: state.calendlyBookedAt || null,
       calendlyHostName: state.calendlyHostName || "",
+      unansweredQuestions: Array.isArray(state.unansweredQuestions) ? state.unansweredQuestions : [],
+      unansweredEmailSent: !!state.unansweredEmailSent,
       dismissedPopups: Array.from(state.dismissedPopups || []),
       posActiveScreen: state.posActiveScreen,
       posSubStepByScreen: state.posSubStepByScreen || {},
@@ -9411,6 +9425,8 @@ function loadProgress() {
     if (typeof data.selectedSite === "string")  state.selectedSite = data.selectedSite;
     if (data.calendlyBookedAt)                  state.calendlyBookedAt = data.calendlyBookedAt;
     if (typeof data.calendlyHostName === "string") state.calendlyHostName = data.calendlyHostName;
+    if (Array.isArray(data.unansweredQuestions)) state.unansweredQuestions = data.unansweredQuestions;
+    if (typeof data.unansweredEmailSent === "boolean") state.unansweredEmailSent = data.unansweredEmailSent;
     if (Array.isArray(data.dismissedPopups))    state.dismissedPopups = new Set(data.dismissedPopups);
     if (typeof data.posActiveScreen === "string") state.posActiveScreen = data.posActiveScreen;
     if (data.posSubStepByScreen && typeof data.posSubStepByScreen === "object") state.posSubStepByScreen = data.posSubStepByScreen;
@@ -9434,6 +9450,8 @@ function resetProgress() {
   state.selectedSite = "";
   state.calendlyBookedAt = null;
   state.calendlyHostName = "";
+  state.unansweredQuestions = [];
+  state.unansweredEmailSent = false;
   state.dismissedPopups = new Set();
   state.posActiveScreen = "signin";
   state.posSubStepByScreen = {};
@@ -9444,6 +9462,44 @@ function resetProgress() {
 // apps OR Power Automate "When a HTTP request is received" flows — both
 // accept text/plain bodies. We use text/plain + "no-cors" to avoid a CORS
 // preflight, so a failed network call never blocks the trainer.
+function submitUnansweredQuestionsEmail() {
+  if (!UNANSWERED_QUESTIONS_WEBHOOK_URL || !/^https:\/\//i.test(UNANSWERED_QUESTIONS_WEBHOOK_URL)) return;
+  if (state.unansweredEmailSent) return; // dedupe — only one email per trainee
+  const id = (typeof getVendorIdentity === "function") ? (getVendorIdentity() || {}) : {};
+  const questions = Array.isArray(state.unansweredQuestions) ? state.unansweredQuestions : [];
+  if (!questions.length) return; // nothing to forward — skip the call
+
+  const body = JSON.stringify({
+    type: "unanswered_questions",
+    to: "Faith.Gillman@fooda.com",
+    trainee: {
+      name: id.name || "",
+      email: id.email || "",
+      restaurant: id.restaurant || ""
+    },
+    selectedSite: state.selectedSite || "",
+    calendlyHost: state.calendlyHostName || "",
+    calendlyBookedAt: state.calendlyBookedAt || null,
+    questionsCount: questions.length,
+    questions: questions,
+    submittedAt: new Date().toISOString(),
+    userAgent: (typeof navigator !== "undefined" && navigator.userAgent) || ""
+  });
+  try {
+    fetch(UNANSWERED_QUESTIONS_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: body
+    }).then(() => {
+      state.unansweredEmailSent = true;
+      if (typeof saveProgress === "function") saveProgress();
+    }).catch(err => { try { console.warn("[fooda unanswered] send failed", err); } catch (_) {} });
+  } catch (err) {
+    try { console.warn("[fooda unanswered] send threw", err); } catch (_) {}
+  }
+}
+
 function submitQuizResponse(payload) {
   if (!QUIZ_WEBHOOK_URL || !/^https:\/\//i.test(QUIZ_WEBHOOK_URL)) return;
   const id = getVendorIdentity() || {};
@@ -10839,10 +10895,23 @@ function handleQuestion(raw) {
   appendUserMsg(q);
   const results = findAnswers(q);
   if (!results.length) {
+    // Capture the unanswered question so we can forward it to the Fooda rep
+    // when the trainee finishes onboarding (see markCalendlyBooked).
+    try {
+      if (!Array.isArray(state.unansweredQuestions)) state.unansweredQuestions = [];
+      state.unansweredQuestions.push({
+        question: q,
+        askedAt: new Date().toISOString(),
+        slideKey: (state.mode === "play" && typeof CHAPTERS !== "undefined" && CHAPTERS[state.chapterIdx])
+          ? (CHAPTERS[state.chapterIdx].key + ":" + state.stepIdx)
+          : state.mode
+      });
+      if (typeof saveProgress === "function") saveProgress();
+    } catch (_) {}
     appendBotMsg(
-      "Hmm, I couldn't find that one in my notes. Try rewording, or text the Fooda ops team at 773-217-0412 or distro@fooda.com and they'll help you out.",
+      "Foodie isn't able to assist with this question at this time — your question will be forwarded to your Fooda Rep and they will go over it on your check-in call.",
       null,
-      ["How do I contact Fooda?", "What are the required food holding temperatures?", "How do I submit the temp log?"]
+      []
     );
     return;
   }
@@ -11194,6 +11263,12 @@ function markCalendlyBooked(reason, payload) {
   if (text) text.textContent = "Booking confirmed — you're all set! Click Next to wrap up training.";
   if (typeof updateGateUI === "function") updateGateUI();
   if (typeof saveProgress === "function") saveProgress();
+  // Fire the unanswered-questions email to the Fooda rep (if there were any
+  // questions Foodie couldn't answer). Fire-and-forget; failures are logged
+  // but never block the trainer.
+  try {
+    if (typeof submitUnansweredQuestionsEmail === "function") submitUnansweredQuestionsEmail();
+  } catch (_) {}
 }
 // Expose for debugging / emergency unlock from devtools console.
 try { window.markCalendlyBooked = markCalendlyBooked; } catch (_) {}
@@ -11647,14 +11722,14 @@ state.quizScores    = state.quizScores    || {};
     if (wasFinished) {
       state.quizCompleted[finishedKey] = true;
       state.quizScores[finishedKey] = finalScore;
-      // Send to the Google Apps Script webhook (fire-and-forget). 60% pass
-      // threshold matches the visual pass/fail in renderResults().
+      // Send to the Google Apps Script webhook (fire-and-forget). 80% pass
+      // threshold (4 out of 5) matches the visual pass/fail in renderResults().
       if (typeof submitQuizResponse === "function") {
         submitQuizResponse({
           chapter: finishedKey,
           score: finalScore,
           total: finalTotal,
-          pass: finalTotal > 0 && finalScore >= Math.ceil(finalTotal * 0.6),
+          pass: finalTotal > 0 && finalScore >= Math.ceil(finalTotal * 0.8),
           answers: finalAnswers
         });
       }
@@ -11761,11 +11836,11 @@ state.quizScores    = state.quizScores    || {};
     const total = active.questions.length;
     const score = active.score;
     const dash = (score / total) * (2 * Math.PI * 56);
-    const passed = score >= Math.ceil(total * 0.6);
+    const passed = score >= Math.ceil(total * 0.8); // 80% to pass — 4 out of 5
     const title = passed ? "Nice work!" : "Almost there";
     const msg = passed
       ? `You got ${score} out of ${total}. You're ready for the next section.`
-      : `You got ${score} out of ${total}. You'll need to retake this quiz before continuing — review the material in the slides and try again.`;
+      : `You got ${score} out of ${total}. You need at least 4 out of 5 to pass — review the material in the slides and retake the quiz.`;
     // On a fail, the only button is Retake — vendors can't proceed until they
     // pass. On a pass, both Retake and Continue show so they can review or move on.
     const footHtml = passed
