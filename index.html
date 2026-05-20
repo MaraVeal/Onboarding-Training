@@ -10817,26 +10817,104 @@ function tokenize(text) {
 }
 
 function findAnswers(query) {
-  const qLower = query.toLowerCase();
+  const qLower = String(query || "").toLowerCase();
   const qTokens = tokenize(query);
   if (!qTokens.length) return [];
+
+  // Build a sliding window of bigrams from the user's question so multi-word
+  // phrases ("temp log", "card reader") can match keywords as phrases, not as
+  // their constituent words bumping into unrelated entries.
+  const qBigrams = new Set();
+  for (let i = 0; i < qTokens.length - 1; i++) {
+    qBigrams.add(qTokens[i] + " " + qTokens[i + 1]);
+  }
+
+  const qTokenSet = new Set(qTokens);
+  const qLen = qTokens.length;
+
   const scored = KNOWLEDGE_BASE.map((entry, idx) => {
     let score = 0;
-    for (const kw of entry.kw) {
-      if (qLower.includes(kw.toLowerCase())) score += 4;
+    let kwHits = 0;       // strong "this entry's domain keywords matched" signal
+    let kwPhraseHits = 0; // multi-word keyword matches (much stronger signal)
+    let qOverlap = 0;     // how many of the user's tokens also appear in the entry's question
+
+    // ---- Keyword matching ----
+    // Single-word keywords add a modest score, multi-word phrase keywords add
+    // proportionally more. This makes "temp log" worth more than "temp" alone.
+    for (const kw of entry.kw || []) {
+      const kwLower = String(kw || "").toLowerCase().trim();
+      if (!kwLower) continue;
+      if (!qLower.includes(kwLower)) continue;
+      const words = kwLower.split(/\s+/).filter(Boolean);
+      if (words.length >= 2) {
+        score += 6 * words.length; // 12 for a 2-word phrase, 18 for 3-word, etc.
+        kwPhraseHits++;
+      } else {
+        score += 3;
+      }
+      kwHits++;
     }
+
+    // ---- Token overlap with entry fields ----
     const entryQTokens = new Set(tokenize(entry.q));
     const entryATokens = new Set(tokenize(entry.a));
     const entryTopicTokens = new Set(tokenize(entry.topic));
+
     for (const t of qTokens) {
-      if (entryQTokens.has(t)) score += 3;
-      if (entryATokens.has(t)) score += 1;
-      if (entryTopicTokens.has(t)) score += 2;
+      if (entryQTokens.has(t))     { score += 3; qOverlap++; }
+      if (entryTopicTokens.has(t)) { score += 2; }
+      if (entryATokens.has(t))     { score += 1; }
     }
-    return { entry, idx, score };
+
+    // Bigram bonus — if a 2-word slice of the user's question also appears in
+    // the entry's question or answer, that's a strong topical signal.
+    const entryQBigrams = new Set();
+    const entryQTokenList = tokenize(entry.q);
+    for (let i = 0; i < entryQTokenList.length - 1; i++) {
+      entryQBigrams.add(entryQTokenList[i] + " " + entryQTokenList[i + 1]);
+    }
+    for (const bg of qBigrams) {
+      if (entryQBigrams.has(bg)) score += 4;
+    }
+
+    return { entry, idx, score, kwHits, kwPhraseHits, qOverlap };
   });
+
   scored.sort((a, b) => b.score - a.score);
-  return scored.filter(s => s.score > 0).slice(0, 4);
+
+  // ---- Filter weak matches ----
+  // Require meaningful evidence: either a keyword hit, or enough question-token
+  // overlap to suggest the user is actually asking about this topic.
+  const MIN_SCORE = 6;
+  const filtered = scored.filter(s => {
+    if (s.score < MIN_SCORE) return false;
+    // A phrase keyword match is a slam-dunk
+    if (s.kwPhraseHits >= 1) return true;
+    // A single-word keyword + at least one question-token overlap
+    if (s.kwHits >= 1 && s.qOverlap >= 1) return true;
+    // No keyword match? Then we need decent question-overlap to claim relevance.
+    if (s.qOverlap >= 2) return true;
+    // Short questions (1-2 useful tokens) where the single token matches
+    // the entry's question are still plausible — keep them.
+    if (qLen <= 2 && s.qOverlap >= 1) return true;
+    return false;
+  });
+
+  if (!filtered.length) return [];
+
+  // ---- Confidence-gap check ----
+  // If the best match isn't meaningfully better than the runner-up, the
+  // question is ambiguous. Only short-circuit to "no answer" when both
+  // candidates have weak-to-medium scores — strong scores (12+) are
+  // confident enough that a close runner-up just means there's a related
+  // follow-up question, which is fine.
+  const top = filtered[0];
+  const next = filtered[1];
+  if (top.score < 12 && next && (top.score - next.score) < 2) {
+    return [];
+  }
+
+  return filtered.slice(0, 4);
 }
 
 function escapeHTML(s) {
