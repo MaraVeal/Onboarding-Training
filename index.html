@@ -2849,6 +2849,44 @@
     background: linear-gradient(180deg, #353C48 0%, #2F3641 100%);
   }
 
+  /* ───────────────────────────────────────────────────────────────
+     DARK MODE — SCENE BACKDROPS
+     Every scene SVG paints its own full-bleed background gradient that
+     was designed for the LIGHT theme (sky-blue / peach / grey). In dark
+     mode those bright rectangles sat on top of the (already dark) stage
+     and made each slide — the POS slides especially — glare. Each of
+     these gradients is used ONLY by its scene's background rect (never by
+     a prop or card), so recoloring the gradient itself recolors just the
+     backdrop. We point them at the dark stage palette so the slide blends
+     into the night theme; content drawn on light cards/props is untouched.
+     ─────────────────────────────────────────────────────────────── */
+  html[data-theme="dark"] svg.scene #deskBg stop:first-child,
+  html[data-theme="dark"] svg.scene #suppliesBG stop:first-child,
+  html[data-theme="dark"] svg.scene #welcomeBg stop:first-child,
+  html[data-theme="dark"] svg.scene #sumSky stop:first-child,
+  html[data-theme="dark"] svg.scene #menuFormBg stop:first-child,
+  html[data-theme="dark"] svg.scene #calBg stop:first-child,
+  html[data-theme="dark"] svg.scene #portalBg stop:first-child,
+  html[data-theme="dark"] svg.scene #wall stop:first-child {
+    stop-color: #353C48;
+  }
+  html[data-theme="dark"] svg.scene #deskBg stop:last-child,
+  html[data-theme="dark"] svg.scene #suppliesBG stop:last-child,
+  html[data-theme="dark"] svg.scene #welcomeBg stop:last-child,
+  html[data-theme="dark"] svg.scene #sumSky stop:last-child,
+  html[data-theme="dark"] svg.scene #menuFormBg stop:last-child,
+  html[data-theme="dark"] svg.scene #calBg stop:last-child,
+  html[data-theme="dark"] svg.scene #portalBg stop:last-child,
+  html[data-theme="dark"] svg.scene #wall stop:last-child {
+    stop-color: #2F3641;
+  }
+  /* Room floor sits a touch darker than the wall so the horizon line survives. */
+  html[data-theme="dark"] svg.scene #floor stop:first-child { stop-color: #2A313B; }
+  html[data-theme="dark"] svg.scene #floor stop:last-child  { stop-color: #232830; }
+  /* The only bit of text that sits directly on a backdrop (the welcome-screen
+     subtitle) needs a light fill so it stays readable once the backdrop darkens. */
+  html[data-theme="dark"] svg.scene .welcome-subtitle { fill: #FFD9C2; }
+
   /* POS tabs */
   .pos-tab { background: var(--bg-card); border-color: var(--border); color: var(--text-secondary); }
   .pos-tab:hover { border-color: var(--color-orange); }
@@ -4130,6 +4168,7 @@ window.TRANSLATIONS_ES_DATA = {
   "in the top-right.": "en la esquina superior derecha.",
   "Pick any workflow on the right and tap the glowing buttons on the iPad to step through it. Each one is fully interactive — switch between them in any order. The Continue button unlocks once you've worked through every workflow at least once.": "Elige cualquier flujo a la derecha y toca los botones resaltados en el iPad para recorrerlo. Cada uno es completamente interactivo — alterna entre ellos en cualquier orden. El botón Continuar se desbloquea cuando hayas recorrido cada flujo al menos una vez.",
   "A green check appears next to each workflow as you finish it.": "Aparece una marca verde junto a cada flujo cuando lo terminas.",
+  "Already finished one? Tap any workflow again anytime to re-walk it; your progress stays saved.": "¿Ya terminaste alguno? Toca cualquier flujo otra vez cuando quieras para repetirlo; tu progreso se mantiene guardado.",
   "Take this short quiz to confirm what you've learned about the iPad and BBPOS card reader. Fill it out and submit it inside the form below — Continue unlocks once you check the box.": "Realiza este breve cuestionario para confirmar lo aprendido sobre el iPad y el lector de tarjetas BBPOS. Llénalo y envíalo en el formulario de abajo — Continuar se desbloquea al marcar la casilla.",
   "The quiz lives inside this slide": "El cuestionario está dentro de esta diapositiva",
   "— no need to leave the trainer. Submit it, then tick the box below to keep going.": "— no necesitas salir del entrenador. Envíalo y marca la casilla de abajo para continuar.",
@@ -5593,7 +5632,7 @@ const CHAPTERS = [
         audioUrl: POS_AUDIO,
         audioLabel: "POS walkthrough",
         body: "Pick any workflow on the right and tap the glowing buttons on the iPad to step through it. Each one is fully interactive — switch between them in any order. The Continue button unlocks once you've worked through every workflow at least once.",
-        callout: { type: "info", html: "<b>Tip:</b> A green check appears next to each workflow as you finish it." },
+        callout: { type: "info", html: "<b>Tip:</b> A green check appears next to each workflow as you finish it.<br><span>Already finished one? Tap any workflow again anytime to re-walk it; your progress stays saved.</span>" },
         posCombined: true,
         // Fire the chapter quiz when the user finishes the walkthrough and
         // taps Next, BEFORE the Calendly booking step. See click handler in
@@ -7952,7 +7991,7 @@ function welcomeSceneSVG() {
     <g transform="translate(550, 180)" text-anchor="middle" font-family="Arial, sans-serif">
       <rect x="-260" y="-46" width="520" height="68" rx="34" fill="url(#welcomeFoodaStripe)" filter="url(#welcomeShadow)"/>
       <text x="0" y="2" font-size="32" font-weight="800" fill="white">Welcome to Fooda!</text>
-      <text x="0" y="54" font-size="14" font-weight="600" fill="#7C2D12">Your onboarding training</text>
+      <text class="welcome-subtitle" x="0" y="54" font-size="14" font-weight="600" fill="#7C2D12">Your onboarding training</text>
     </g>
   `;
 }
@@ -10008,7 +10047,13 @@ function renderPlay() {
             const done = mx >= flow.length - 1;
             const cls = "pos-tab" + (k === active ? " active" : "") + (done ? " done" : "");
             const labelData = POS_TAB_LABELS[k] || { icon: "•", label: k };
-            const status = done ? "✓" : (k === active ? `${(state.posSubStepByScreen[k]||0)+1}/${total}` : `${total} steps`);
+            const cur = state.posSubStepByScreen[k] || 0;
+            // A finished workflow that's currently active and rewound below its
+            // last step is being replayed — show its live position instead of ✓.
+            const replaying = done && k === active && cur < flow.length - 1;
+            const status = replaying ? `${cur + 1}/${total}`
+              : done ? "✓"
+              : (k === active ? `${cur + 1}/${total}` : `${total} steps`);
             return `<button class="${cls}" data-pos-tab="${k}" type="button">
               <span class="pos-tab-icon">${labelData.icon}</span>
               <span class="pos-tab-label">${labelData.label}</span>
@@ -10387,6 +10432,17 @@ ${"" /* Audio element is NOT rendered here — it lives as a singleton on body
       e.stopPropagation();
       const key = btn.getAttribute("data-pos-tab");
       state.posActiveScreen = key;
+      // If this workflow has already been completed once, tapping its tab
+      // RESTARTS it from the top so the trainee can walk through it again at
+      // any time. We rewind only the visual pointer (posSubStepByScreen) and
+      // deliberately leave posMaxByScreen alone — that's what the Continue gate
+      // reads, so replaying never re-locks the slide and the ✓ stays put.
+      const flowForTab = POS_FLOW[key] || [];
+      const tabAlreadyDone = flowForTab.length > 0 &&
+        (state.posMaxByScreen[key] || 0) >= flowForTab.length - 1;
+      if (tabAlreadyDone) {
+        state.posSubStepByScreen[key] = 0;
+      }
       state.posSubStep = state.posSubStepByScreen[key] || 0;
       render();
     });
@@ -10454,6 +10510,10 @@ ${"" /* Audio element is NOT rendered here — it lives as a singleton on body
         const active = state.posActiveScreen || (posStep.posScreens || [])[0];
         const flow = POS_FLOW[active];
         if (!flow) return;
+        // Was this workflow already finished before this click? If so, the user
+        // is replaying it for review — we must NOT auto-jump them to another tab
+        // when they reach the end again.
+        const wasAlreadyDone = (state.posMaxByScreen[active] || 0) >= flow.length - 1;
         const cur = state.posSubStepByScreen[active] || 0;
         if (cur < flow.length - 1) {
           // Mid-workflow: just step forward inside the active tab
@@ -10467,7 +10527,10 @@ ${"" /* Audio element is NOT rendered here — it lives as a singleton on body
           state.posMaxByScreen[active] = flow.length - 1;
           state.posSubStep = state.posSubStepByScreen[state.posActiveScreen] || 0;
           scheduleRender(render);
-          const next = (posStep.posScreens || []).find(k => {
+          // Only auto-advance to the next unfinished workflow on a FIRST
+          // completion. During a replay (wasAlreadyDone) we stay put so the
+          // trainee stays in control of what they review.
+          const next = wasAlreadyDone ? null : (posStep.posScreens || []).find(k => {
             const f = POS_FLOW[k];
             return f && (state.posMaxByScreen[k] || 0) < f.length - 1;
           });
@@ -12096,8 +12159,11 @@ state.quizScores    = state.quizScores    || {};
     const isQuizGate = !!(currentStep && currentStep.quizGate);
     const alreadyDone = state.quizCompleted[ch.key];
     const hasQuiz = !!(window.QUIZ_QUESTIONS && window.QUIZ_QUESTIONS[ch.key]);
-    // Demo mode: don't auto-open the quiz overlay so the demoer can click straight through.
-    if ((isOnLast || isQuizGate) && hasQuiz && !alreadyDone && !(typeof isDemoMode !== "undefined" && isDemoMode)) {
+    // The knowledge-check quiz now populates in demo mode too, exactly as it
+    // does for restaurants, so a demoer can show it. (Demo runs still don't
+    // transmit results — that suppression lives in submitQuizResponse(), so the
+    // quiz displays and scores locally without pinging the real webhook/email.)
+    if ((isOnLast || isQuizGate) && hasQuiz && !alreadyDone) {
       e.stopPropagation();
       e.preventDefault();
       open(ch.key);
