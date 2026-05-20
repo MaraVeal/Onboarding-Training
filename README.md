@@ -4,3 +4,5 @@ An interactive, page-by-page walkthrough of Fooda's onboarding process — built
 
 **Live site:** https://maraveal.github.io/Onboarding-Training/
 *(replace with your actual GitHub Pages URL once it's live)*
+
+Demo - https://maraveal.github.io/Onboarding-Training/?demo=fooda-distroflex
