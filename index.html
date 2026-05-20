@@ -10685,15 +10685,18 @@ function getStepGate() {
   // We only gate when the UI language is English — the voiceovers are
   // English-only, so Spanish-language users shouldn't be held back.
   if (step.audioUrl && state.lang === "en") {
-    const audioKey = `${chKey}:${state.stepIdx}`;
-    if (!(state.completedAudios && state.completedAudios.has(audioKey))) {
-      const label = step.audioLabel || "voiceover";
-      return {
-        locked: true,
-        hint: `Listen to the ${label} — Next unlocks when it finishes`,
-        required: 1,
-        done: 0
-      };
+    // Demo mode: don't block on voice-over playback.
+    if (!(typeof isDemoMode !== "undefined" && isDemoMode)) {
+      const audioKey = `${chKey}:${state.stepIdx}`;
+      if (!(state.completedAudios && state.completedAudios.has(audioKey))) {
+        const label = step.audioLabel || "voiceover";
+        return {
+          locked: true,
+          hint: `Listen to the ${label} — Next unlocks when it finishes`,
+          required: 1,
+          done: 0
+        };
+      }
     }
   }
   // Setup slide 3 (On-site Equipment): must click every piece of equipment on the scene
@@ -10733,6 +10736,7 @@ function getStepGate() {
   }
   // Quiz slide: must check the "I've completed the quiz" box to continue
   if (chKey === "pos" && step.quizForm) {
+    if (typeof isDemoMode !== "undefined" && isDemoMode) return { locked: false, hint: "Demo mode — quiz gate skipped", required: 1, done: 1 };
     const locked = !state.quizDone;
     return {
       locked,
@@ -12092,7 +12096,8 @@ state.quizScores    = state.quizScores    || {};
     const isQuizGate = !!(currentStep && currentStep.quizGate);
     const alreadyDone = state.quizCompleted[ch.key];
     const hasQuiz = !!(window.QUIZ_QUESTIONS && window.QUIZ_QUESTIONS[ch.key]);
-    if ((isOnLast || isQuizGate) && hasQuiz && !alreadyDone) {
+    // Demo mode: don't auto-open the quiz overlay so the demoer can click straight through.
+    if ((isOnLast || isQuizGate) && hasQuiz && !alreadyDone && !(typeof isDemoMode !== "undefined" && isDemoMode)) {
       e.stopPropagation();
       e.preventDefault();
       open(ch.key);
@@ -12615,9 +12620,38 @@ state.quizScores    = state.quizScores    || {};
   }
   setInterval(tick, 200);
 
-  // Pause audio if the user leaves the tab.
+  // Pause audio when the user leaves the tab (switches tabs/apps, locks the
+  // screen, minimizes). Resume it from where it left off when they return.
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { try { audioEl.pause(); } catch (_) {} }
+    if (document.hidden) {
+      // Leaving the tab — pause and remember that we were the one who paused.
+      if (!audioEl.paused) {
+        audioEl.dataset.pausedByHide = "1";
+        try { audioEl.pause(); } catch (_) {}
+      }
+      return;
+    }
+    // Coming back to the tab — resume the current slide's voiceover if it was
+    // interrupted partway through. We only auto-resume when ALL of these hold:
+    //   - we're actually in play mode and on the English (voiceover) UI
+    //   - a slide track is currently loaded
+    //   - that slide's audio hasn't already been heard end-to-end
+    //   - the clip is paused but not finished (i.e. there's more to play)
+    // tick() won't do this for us: it sees the same slide key and bails early
+    // to avoid restarting playback on re-renders.
+    const wasPausedByHide = audioEl.dataset.pausedByHide === "1";
+    audioEl.dataset.pausedByHide = "";
+    if (!wasPausedByHide) return;
+    if (state.mode !== "play" || state.lang !== "en") return;
+    const key = audioEl.dataset.currentKey || "";
+    if (!key) return;
+    if (state.completedAudios && state.completedAudios.has(key)) return;
+    if (audioEl.src && audioEl.paused && !audioEl.ended) {
+      const p = audioEl.play();
+      // Swallow autoplay rejections — a single tap anywhere will satisfy the
+      // gesture requirement, same as on first load.
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
   });
 })();
 
