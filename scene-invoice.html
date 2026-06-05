@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Understanding Your Fooda Invoice — Fooda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+  // Embedded in the Fooda Pop-Up Trainer: theme is owned by the trainer.
+  // It posts {type:"fooda-theme", theme} on toggle; mirror it onto <html>.
+  window.addEventListener("message", function (e) {
+    var d = e && e.data;
+    if (!d || d.type !== "fooda-theme") return;
+    if (d.theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.removeAttribute("data-theme");
+  });
+  </script>
+  <script>
+  (function(){
+    try {
+      if (localStorage.getItem('mise_theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    } catch (e) {}
+    window.miseToggleTheme = function() {
+      var html = document.documentElement;
+      var isDark = html.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        html.removeAttribute('data-theme');
+        try { localStorage.setItem('mise_theme', 'light'); } catch (e) {}
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        try { localStorage.setItem('mise_theme', 'dark'); } catch (e) {}
+      }
+    };
+  })();
+  </script>
+  <style>
+    :root {
+      --bg-page: #F5F5F6;
+      --bg-card: #fff;
+      --bg-soft: #FAFAFA;
+      --text-default: #222;
+      --text-primary: #374053;
+      --text-secondary: #737A87;
+      --text-muted: #AFB3BA;
+      --border: #e4e6ea;
+      --border-input: #d7dae0;
+      --divider: #eef0f3;
+      --color-orange: #F3634A;
+      --color-orange-dark: #d94f39;
+      --color-green: #18CC9B;
+      --color-charcoal: #374053;
+      --color-yellow: #FBDB56;
+    }
+    html[data-theme="dark"] {
+      --bg-page: #2f3641;
+      --bg-card: #3d4452;
+      --bg-soft: #353c48;
+      --text-default: #D4D8DE;
+      --text-primary: #D4D8DE;
+      --text-secondary: #B5BEC9;
+      --text-muted: #9AA6B5;
+      --border: rgba(255,255,255,0.1);
+      --border-input: rgba(255,255,255,0.14);
+      --divider: rgba(255,255,255,0.06);
+      background-color: #2f3641 !important;
+    }
+    html[data-theme="dark"] body { background-color: #2f3641 !important; }
+    html, body { margin: 0; }
+
+    .mise-tab-root, .mise-tab-root * { box-sizing: border-box; }
+    .mise-tab-root {
+      font-family: "Quicksand", "Segoe UI", Arial, sans-serif;
+      color: var(--text-default);
+      background: var(--bg-page);
+      padding: 32px 32px 80px;
+      min-height: 100vh;
+      line-height: 1.45;
+      transition: background .2s, color .2s;
+    }
+    input, button, select, textarea { font-family: inherit; }
+
+    .mise-tab-root .mt-page { max-width: 1180px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .mise-tab-root .mt-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 16px; margin-bottom: 28px;
+    }
+    .mise-tab-root .mt-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--color-orange);
+      margin-bottom: 12px;
+    }
+    .mise-tab-root .mt-eyebrow .mt-eyebrow-sep {
+      display: inline-block; margin: 0 8px; color: var(--text-muted); letter-spacing: 0;
+    }
+    .mise-tab-root .mt-title {
+      font-size: 38px; font-weight: 700; color: var(--text-primary);
+      line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.5px;
+    }
+    .mise-tab-root .mt-lede {
+      font-size: 15px; color: var(--text-secondary);
+      max-width: 720px; margin: 0;
+    }
+    .mise-tab-root .mt-lede strong { color: var(--text-primary); font-weight: 600; }
+    .mise-tab-root .mt-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ── Dark mode toggle ── */
+    .mt-theme-btn {
+      background: transparent; border: 1px solid var(--border-input);
+      padding: 8px 10px; cursor: pointer; border-radius: 8px;
+      color: var(--text-secondary);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: color .15s, background .15s, border-color .15s;
+      font-size: 16px; line-height: 1;
+    }
+    .mt-theme-btn:hover { color: var(--text-primary); border-color: var(--color-orange); }
+    .mt-theme-btn .mt-icon-moon { display: inline; }
+    .mt-theme-btn .mt-icon-sun  { display: none; }
+    html[data-theme="dark"] .mt-theme-btn .mt-icon-moon { display: none; }
+    html[data-theme="dark"] .mt-theme-btn .mt-icon-sun  { display: inline; }
+
+    /* ── Block card ── */
+    .mise-tab-root .mt-block {
+      background: var(--bg-card); border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(24, 28, 35, 0.04);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    html[data-theme="dark"] .mise-tab-root .mt-block { box-shadow: 0 1px 6px rgba(0,0,0,0.25); }
+    .mise-tab-root .mt-block-head {
+      background: #374053; color: #fff;
+      padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px;
+    }
+    html[data-theme="dark"] .mise-tab-root .mt-block-head { background: #2a3140; }
+    .mise-tab-root .mt-block-head h2 {
+      font-size: 14px; font-weight: 600; margin: 0; color: #fff;
+    }
+    .mise-tab-root .mt-block-head .mt-block-sub { font-size: 11px; opacity: 0.7; }
+    .mise-tab-root .mt-block-body { padding: 0; }
+
+    /* ── Two-column walk layout ── */
+    .mise-tab-root .mt-walk {
+      display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+      min-height: 520px;
+    }
+    @media (max-width: 880px) {
+      .mise-tab-root .mt-walk { grid-template-columns: 1fr; }
+    }
+
+    /* ── Stage (invoice viewer) ── */
+    .mise-tab-root .mt-stage {
+      position: relative;
+      background: #1a1f2a;
+      padding: 28px 24px;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 520px;
+      overflow: hidden;
+    }
+    .mise-tab-root .mt-stage-svg {
+      display: none; width: 100%; line-height: 0; position: relative;
+    }
+    .mise-tab-root .mt-stage-svg.active { display: block; }
+    .mise-tab-root .mt-stage-svg svg {
+      width: 100%; height: auto; display: block;
+    }
+
+    /* ── SVG marker styles ── */
+    .mt-svg-marker-circle {
+      cursor: pointer; transition: transform .15s;
+      transform-origin: center; transform-box: fill-box;
+    }
+    .mt-svg-marker-group { cursor: pointer; }
+    .mt-svg-marker-group:hover .mt-svg-marker-circle { transform: scale(1.15); }
+    .mt-svg-marker-group .mt-svg-marker-pulse {
+      animation: mt-svg-pulse 2.4s infinite;
+      transform-origin: center; transform-box: fill-box;
+    }
+    .mt-svg-marker-group.active .mt-svg-marker-pulse { animation: none; }
+    .mt-svg-marker-group.active .mt-svg-marker-circle { fill: #fff; }
+    .mt-svg-marker-group.active .mt-svg-marker-text { fill: #F3634A; }
+    @keyframes mt-svg-pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50%       { opacity: 0; transform: scale(2.2); }
+    }
+
+    /* ── Target highlight (glows when its marker is active) ── */
+    .mt-target { transition: filter .25s; }
+    .mt-target.active {
+      filter: drop-shadow(0 0 0 #F3634A) drop-shadow(0 0 10px rgba(243,99,74,0.9));
+      animation: mt-target-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes mt-target-pulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(243,99,74,0.6)); }
+      50%       { filter: drop-shadow(0 0 18px rgba(243,99,74,1)); }
+    }
+
+    /* ── Connector line ── */
+    .mt-connector {
+      stroke: #F3634A; stroke-width: 2; fill: none;
+      stroke-dasharray: 4 4; opacity: 0.45; transition: opacity .2s;
+    }
+    .mt-connector.active { opacity: 1; stroke-dasharray: none; stroke-width: 2.5; }
+
+    /* ── Side panel ── */
+    .mise-tab-root .mt-side {
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    @media (max-width: 880px) {
+      .mise-tab-root .mt-side { border-left: none; border-top: 1px solid var(--border); }
+    }
+    .mise-tab-root .mt-side-head {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--divider);
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    }
+    .mise-tab-root .mt-side-step-tag {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; color: var(--color-orange); margin-bottom: 4px;
+    }
+    .mise-tab-root .mt-side-step-title {
+      font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;
+    }
+    .mise-tab-root .mt-side-close {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 16px; padding: 4px 6px;
+      border-radius: 6px; line-height: 1;
+    }
+    .mise-tab-root .mt-side-close:hover { color: var(--color-orange); background: var(--bg-soft); }
+    .mise-tab-root .mt-side-body {
+      padding: 18px 20px; flex: 1; display: flex; flex-direction: column;
+    }
+    .mise-tab-root .mt-side-counter {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+      color: var(--text-muted); margin-bottom: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .mise-tab-root .mt-side-counter .mt-counter-num {
+      color: var(--color-orange); font-size: 13px;
+    }
+    .mise-tab-root .mt-side-instruction {
+      font-size: 14px; color: var(--text-default); line-height: 1.6;
+      margin: 0; flex: 1;
+    }
+    .mise-tab-root .mt-side-instruction p { margin: 0 0 10px; }
+    .mise-tab-root .mt-side-instruction p:last-child { margin-bottom: 0; }
+    .mise-tab-root .mt-side-instruction ul {
+      margin: 8px 0; padding-left: 18px;
+    }
+    .mise-tab-root .mt-side-instruction li { margin-bottom: 5px; }
+
+    /* ── Step nav ── */
+    .mise-tab-root .mt-side-nav {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 12px 20px 18px;
+      border-top: 1px solid var(--divider);
+    }
+    .mise-tab-root .mt-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all .15s;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .mise-tab-root .mt-btn-primary {
+      background: var(--color-orange); color: #fff; border-color: var(--color-orange);
+    }
+    .mise-tab-root .mt-btn-primary:hover { background: var(--color-orange-dark); border-color: var(--color-orange-dark); }
+    .mise-tab-root .mt-btn-ghost {
+      background: var(--bg-card); color: var(--text-primary); border-color: var(--border-input);
+    }
+    .mise-tab-root .mt-btn-ghost:hover { border-color: var(--color-orange); color: var(--color-orange); }
+    .mise-tab-root .mt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .mise-tab-root .mt-btn:disabled:hover {
+      border-color: var(--border-input); color: var(--text-primary); background: var(--bg-card);
+    }
+
+    /* ── Page nav pills (below block) ── */
+    .mise-tab-root .mt-page-nav {
+      display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+    }
+    .mise-tab-root .mt-page-pill {
+      padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border-input);
+      background: var(--bg-card); color: var(--text-secondary);
+      transition: all .15s;
+    }
+    .mise-tab-root .mt-page-pill:hover { border-color: var(--color-orange); color: var(--color-orange); }
+    .mise-tab-root .mt-page-pill.active {
+      background: var(--color-orange); color: #fff; border-color: var(--color-orange);
+    }
+
+    /* ── Glossary section ── */
+    .mise-tab-root .mt-glossary {
+      margin-top: 28px;
+    }
+    .mise-tab-root .mt-glossary-head {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-secondary);
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mise-tab-root .mt-glossary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    @media (max-width: 800px) {
+      .mise-tab-root .mt-glossary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .mise-tab-root .mt-gl-item {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .mise-tab-root .mt-gl-item:nth-child(4n) { border-right: none; }
+    .mise-tab-root .mt-gl-item:nth-last-child(-n+4) { border-bottom: none; }
+    .mise-tab-root .mt-gl-term {
+      font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;
+    }
+    .mise-tab-root .mt-gl-def {
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+    }
+
+    /* ── Footer ── */
+    .mise-tab-root .mt-footer {
+      margin-top: 36px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--text-muted);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="mise-tab-root">
+  <div class="mt-page">
+
+    <div class="mt-block">
+      <div class="mt-block-head">
+        <h2>Your Fooda Invoice — walk through each section</h2>
+        <span class="mt-block-sub">Click any orange marker · or use Next →</span>
+      </div>
+      <div class="mt-block-body">
+        <div class="mt-walk">
+
+          <!-- ── Stage ── -->
+          <div class="mt-stage">
+
+            <!-- Page 1: Consolidated Invoice / Summary -->
+            <div class="mt-stage-svg active" id="mt-stage-0">
+              <svg viewBox="0 0 820 560" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="inv-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.45"/>
+                  </filter>
+                </defs>
+                <rect width="820" height="560" fill="#1a1f2a"/>
+                <rect x="50" y="20" width="720" height="516" rx="5" fill="#fff" filter="url(#inv-shadow)"/>
+                <rect x="50" y="20" width="720" height="7" rx="3" fill="#F3634A"/>
+
+                <!-- Fooda logo + address (right) -->
+                <rect x="680" y="40" width="68" height="22" rx="3" fill="#F3634A"/>
+                <text x="714" y="56" fill="#fff" font-family="Quicksand" font-size="12" font-weight="700" text-anchor="middle">fooda</text>
+                <text x="748" y="74" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">1 N. Dearborn St., Suite 600</text>
+                <text x="748" y="84" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">Chicago, IL 60602  ·  Fooda, Inc.</text>
+                <text x="748" y="98" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end" font-weight="600">Account Manager:</text>
+                <text x="748" y="108" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[Account Manager]</text>
+                <text x="748" y="118" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[email@fooda.com]</text>
+
+                <!-- Invoice title + meta (left) -->
+                <text x="72" y="56" fill="#1a2238" font-family="Quicksand" font-size="14" font-weight="700">Consolidated Invoice</text>
+                <text x="72" y="74" fill="#374053" font-family="Quicksand" font-size="12" font-weight="600">Sample Restaurant</text>
+                <text x="72" y="90" fill="#8a92a8" font-family="Quicksand" font-size="9.5">Invoice ID</text>
+                <text x="172" y="90" fill="#374053" font-family="Quicksand" font-size="9.5" font-weight="600">CV0000000</text>
+                <text x="72" y="104" fill="#8a92a8" font-family="Quicksand" font-size="9.5">Invoice Date</text>
+                <text x="172" y="104" fill="#374053" font-family="Quicksand" font-size="9.5" font-weight="600">3/11/2026</text>
+
+                <!-- ── TARGET 0: Top-line 5-cell table ── -->
+                <g class="mt-target" data-target="0">
+                  <rect x="72" y="120" width="676" height="70" rx="4" fill="#F1EEE6"/>
+                  <!-- Labels -->
+                  <text x="100" y="138" fill="#8a92a8" font-family="Quicksand" font-size="8.5">Meals sold</text>
+                  <text x="228" y="138" fill="#8a92a8" font-family="Quicksand" font-size="8.5">Food Sales</text>
+                  <text x="358" y="138" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-style="italic">Sales Tax</text>
+                  <text x="358" y="149" fill="#8a92a8" font-family="Quicksand" font-size="8" font-style="italic">(Restaurant to remit)</text>
+                  <text x="492" y="138" fill="#8a92a8" font-family="Quicksand" font-size="8" font-style="italic">Sales Tax (Fooda or one of</text>
+                  <text x="492" y="148" fill="#8a92a8" font-family="Quicksand" font-size="8" font-style="italic">Fooda's partners to remit)</text>
+                  <text x="640" y="138" fill="#8a92a8" font-family="Quicksand" font-size="8.5">Gross Food Sales</text>
+                  <!-- Values -->
+                  <text x="100" y="170" fill="#374053" font-family="Quicksand" font-size="14" font-weight="700">44</text>
+                  <text x="228" y="170" fill="#374053" font-family="Quicksand" font-size="14" font-weight="700">$566.00</text>
+                  <text x="358" y="170" fill="#374053" font-family="Quicksand" font-size="14" font-weight="700">$0.00</text>
+                  <text x="492" y="170" fill="#9098b0" font-family="Quicksand" font-size="13" font-style="italic">$38.14</text>
+                  <text x="640" y="170" fill="#374053" font-family="Quicksand" font-size="14" font-weight="700">$604.14</text>
+                  <!-- Gross sub-label -->
+                  <text x="640" y="182" fill="#9098b0" font-family="Quicksand" font-size="8">Includes Tax</text>
+                </g>
+
+                <!-- ── TARGET 1: Events table ── -->
+                <g class="mt-target" data-target="1">
+                  <!-- Header row -->
+                  <text x="72" y="216" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Date</text>
+                  <text x="138" y="216" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Section Reference</text>
+                  <text x="290" y="216" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Location</text>
+                  <text x="536" y="216" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Market</text>
+                  <text x="748" y="216" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700" text-anchor="end">Total</text>
+                  <line x1="72" y1="221" x2="748" y2="221" stroke="#DAD3C2" stroke-width="1"/>
+                  <!-- Data row -->
+                  <text x="72" y="239" fill="#374053" font-family="Quicksand" font-size="10.5">3/3/2026</text>
+                  <text x="138" y="239" fill="#374053" font-family="Quicksand" font-size="10.5">NV0000000</text>
+                  <text x="290" y="239" fill="#374053" font-family="Quicksand" font-size="10.5">Sample Location — Sample Site</text>
+                  <text x="536" y="239" fill="#374053" font-family="Quicksand" font-size="10.5">Sample Market</text>
+                  <text x="748" y="239" fill="#374053" font-family="Quicksand" font-size="10.5" text-anchor="end" font-weight="600">$341.47</text>
+                  <line x1="72" y1="248" x2="748" y2="248" stroke="#DAD3C2" stroke-width="1"/>
+                  <!-- Due row -->
+                  <text x="72" y="266" fill="#374053" font-family="Quicksand" font-size="11" font-weight="700">DUE TO SAMPLE RESTAURANT</text>
+                  <text x="748" y="266" fill="#374053" font-family="Quicksand" font-size="12" text-anchor="end" font-weight="700">$341.47</text>
+                </g>
+
+                <!-- ── TARGET 2: Deposit confirmation ── -->
+                <g class="mt-target" data-target="2">
+                  <rect x="72" y="284" width="676" height="72" rx="4" fill="#fff" stroke="#F3634A" stroke-width="1.5"/>
+                  <text x="90" y="303" fill="#F3634A" font-family="Quicksand" font-size="8.5" font-weight="700" letter-spacing="0.8">Deposit Confirmation</text>
+                  <text x="90" y="325" fill="#374053" font-family="Quicksand" font-size="11.5" font-weight="600">$341.47 will be deposited by ACH on 3/18/2026</text>
+                  <text x="90" y="345" fill="#8a92a8" font-family="Quicksand" font-size="9.5">Timing of funds availability depends on the receiving bank</text>
+                </g>
+
+                <text x="72" y="386" fill="#8a92a8" font-family="Quicksand" font-size="9" font-style="italic">Page 1 of 3  ·  Consolidated Invoice</text>
+              </svg>
+            </div>
+
+            <!-- Page 2: Event Invoice (per-event fee breakdown) -->
+            <div class="mt-stage-svg" id="mt-stage-1">
+              <svg viewBox="0 0 820 680" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="inv-shadow2" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.45"/>
+                  </filter>
+                </defs>
+                <rect width="820" height="680" fill="#1a1f2a"/>
+                <rect x="50" y="20" width="720" height="636" rx="5" fill="#fff" filter="url(#inv-shadow2)"/>
+                <rect x="50" y="20" width="720" height="7" rx="3" fill="#F3634A"/>
+
+                <!-- Fooda logo + address (right) -->
+                <rect x="680" y="40" width="68" height="22" rx="3" fill="#F3634A"/>
+                <text x="714" y="56" fill="#fff" font-family="Quicksand" font-size="12" font-weight="700" text-anchor="middle">fooda</text>
+                <text x="748" y="74" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">1 N. Dearborn St., Suite 600</text>
+                <text x="748" y="84" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">Chicago, IL 60602  ·  Fooda, Inc.</text>
+                <text x="748" y="98" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end" font-weight="600">Account Manager:</text>
+                <text x="748" y="108" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[Account Manager]</text>
+                <text x="748" y="118" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[email@fooda.com]</text>
+
+                <!-- Invoice title + meta (left) -->
+                <text x="72" y="56" fill="#1a2238" font-family="Quicksand" font-size="14" font-weight="700">Event Invoice</text>
+                <text x="72" y="74" fill="#374053" font-family="Quicksand" font-size="12" font-weight="600">Sample Restaurant</text>
+                <!-- 12 meta rows, 14px line height -->
+                <text x="72" y="90" fill="#8a92a8" font-family="Quicksand" font-size="9">Invoice Number</text><text x="200" y="90" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">CV0000000</text>
+                <text x="72" y="103" fill="#8a92a8" font-family="Quicksand" font-size="9">Section Reference</text><text x="200" y="103" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">NV0000000</text>
+                <text x="72" y="116" fill="#8a92a8" font-family="Quicksand" font-size="9">Invoice Date</text><text x="200" y="116" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">3/11/2026</text>
+                <text x="72" y="129" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Type</text><text x="200" y="129" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample-000000-01</text>
+                <text x="72" y="142" fill="#8a92a8" font-family="Quicksand" font-size="9">Serving</text><text x="200" y="142" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Restaurant</text>
+                <text x="72" y="155" fill="#8a92a8" font-family="Quicksand" font-size="9">Meal Period</text><text x="200" y="155" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Lunch</text>
+                <text x="72" y="168" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Date</text><text x="200" y="168" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">3/3/2026</text>
+                <text x="72" y="181" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Location</text><text x="200" y="181" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Location — Sample Site</text>
+                <text x="200" y="192" fill="#374053" font-family="Quicksand" font-size="9">1234 Sample St, Sample Food Court</text>
+                <text x="72" y="205" fill="#8a92a8" font-family="Quicksand" font-size="9">Cashier</text><text x="200" y="205" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Restaurant</text>
+                <text x="72" y="218" fill="#8a92a8" font-family="Quicksand" font-size="9">Commission</text><text x="200" y="218" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">20%</text>
+                <text x="72" y="231" fill="#8a92a8" font-family="Quicksand" font-size="9">Partner</text><text x="200" y="231" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Partner</text>
+                <text x="72" y="244" fill="#8a92a8" font-family="Quicksand" font-size="9">Point of Sale</text><text x="200" y="244" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Fooda POS</text>
+
+                <!-- Fee table -->
+                <line x1="72" y1="256" x2="748" y2="256" stroke="#DAD3C2" stroke-width="1"/>
+                <text x="72" y="269" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700"> </text>
+                <text x="748" y="269" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700" text-anchor="end">Total</text>
+                <line x1="72" y1="274" x2="748" y2="274" stroke="#DAD3C2" stroke-width="1"/>
+
+                <!-- ── TARGET 0: Payments — Card ── -->
+                <g class="mt-target" data-target="0">
+                  <text x="72" y="292" fill="#374053" font-family="Quicksand" font-size="11" font-weight="600">Payments — Card</text>
+                  <text x="748" y="292" fill="#374053" font-family="Quicksand" font-size="11" font-weight="600" text-anchor="end">$525.16</text>
+                  <line x1="72" y1="300" x2="748" y2="300" stroke="#F1EEE6" stroke-width="1"/>
+                </g>
+
+                <!-- ── TARGET 1: Fee deduction lines ── -->
+                <g class="mt-target" data-target="1">
+                  <text x="72" y="316" fill="#374053" font-family="Quicksand" font-size="9.5">Payment Processing Fees for in-person orders (1.75% on $511.28 of card and subsidy,</text>
+                  <text x="72" y="328" fill="#374053" font-family="Quicksand" font-size="9.5">misc payments and other tender methods + $0.25 on 35 orders)</text>
+                  <text x="748" y="322" fill="#374053" font-family="Quicksand" font-size="9.5" text-anchor="end">($17.70)</text>
+                  <line x1="72" y1="336" x2="748" y2="336" stroke="#F1EEE6" stroke-width="1"/>
+
+                  <text x="72" y="350" fill="#374053" font-family="Quicksand" font-size="9.5">Payment Processing Fees for Online Orders, Mobile Orders, Minimum Sales, and</text>
+                  <text x="72" y="362" fill="#374053" font-family="Quicksand" font-size="9.5">Guaranteed Sales (3.5% of card and subsidy + $0.15 on 1 order)</text>
+                  <text x="748" y="356" fill="#374053" font-family="Quicksand" font-size="9.5" text-anchor="end">($0.64)</text>
+                  <line x1="72" y1="370" x2="748" y2="370" stroke="#F1EEE6" stroke-width="1"/>
+
+                  <text x="72" y="384" fill="#374053" font-family="Quicksand" font-size="9.5">Commission and Event Fees (20% commission on $566.00 food sales after refunds</text>
+                  <text x="72" y="396" fill="#374053" font-family="Quicksand" font-size="9.5">and rewards purchases + $5.00 event fee)</text>
+                  <text x="748" y="390" fill="#374053" font-family="Quicksand" font-size="9.5" text-anchor="end">($118.20)</text>
+                  <line x1="72" y1="404" x2="748" y2="404" stroke="#F1EEE6" stroke-width="1"/>
+
+                  <text x="72" y="418" fill="#374053" font-family="Quicksand" font-size="9.5">Sales tax on food sales to be remitted by Fooda or one of Fooda's partners</text>
+                  <text x="72" y="430" fill="#374053" font-family="Quicksand" font-size="9.5">to tax authority (sales tax on $566.00 food sales after refunds)</text>
+                  <text x="748" y="424" fill="#374053" font-family="Quicksand" font-size="9.5" text-anchor="end">($38.14)</text>
+                  <line x1="72" y1="438" x2="748" y2="438" stroke="#F1EEE6" stroke-width="1"/>
+
+                  <line x1="72" y1="452" x2="748" y2="452" stroke="#DAD3C2" stroke-width="1.5"/>
+                </g>
+
+                <!-- ── TARGET 2: DUE TO total ── -->
+                <g class="mt-target" data-target="2">
+                  <text x="72" y="494" fill="#374053" font-family="Quicksand" font-size="12" font-weight="700">DUE TO SAMPLE RESTAURANT</text>
+                  <text x="748" y="494" fill="#374053" font-family="Quicksand" font-size="13" font-weight="700" text-anchor="end">$341.47</text>
+                </g>
+
+                <text x="72" y="530" fill="#8a92a8" font-family="Quicksand" font-size="9" font-style="italic">Page 2 of 3  ·  Event Invoice (one page per event)</text>
+              </svg>
+            </div>
+
+            <!-- Page 3: Event Summary / Reconciliation -->
+            <div class="mt-stage-svg" id="mt-stage-2">
+              <svg viewBox="0 0 820 680" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="inv-shadow3" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.45"/>
+                  </filter>
+                </defs>
+                <rect width="820" height="680" fill="#1a1f2a"/>
+                <rect x="50" y="20" width="720" height="636" rx="5" fill="#fff" filter="url(#inv-shadow3)"/>
+                <rect x="50" y="20" width="720" height="7" rx="3" fill="#F3634A"/>
+
+                <!-- Fooda logo + address (right) -->
+                <rect x="680" y="40" width="68" height="22" rx="3" fill="#F3634A"/>
+                <text x="714" y="56" fill="#fff" font-family="Quicksand" font-size="12" font-weight="700" text-anchor="middle">fooda</text>
+                <text x="748" y="74" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">1 N. Dearborn St., Suite 600</text>
+                <text x="748" y="84" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">Chicago, IL 60602  ·  Fooda, Inc.</text>
+                <text x="748" y="98" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end" font-weight="600">Account Manager:</text>
+                <text x="748" y="108" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[Account Manager]</text>
+                <text x="748" y="118" fill="#9098b0" font-family="Quicksand" font-size="8.5" text-anchor="end">[email@fooda.com]</text>
+
+                <!-- Title + same meta rows as page 2 -->
+                <text x="72" y="56" fill="#1a2238" font-family="Quicksand" font-size="14" font-weight="700">Event Summary</text>
+                <text x="72" y="74" fill="#374053" font-family="Quicksand" font-size="12" font-weight="600">Sample Restaurant</text>
+                <text x="72" y="90" fill="#8a92a8" font-family="Quicksand" font-size="9">Invoice Number</text><text x="200" y="90" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">CV0000000</text>
+                <text x="72" y="103" fill="#8a92a8" font-family="Quicksand" font-size="9">Section Reference</text><text x="200" y="103" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">NV0000000</text>
+                <text x="72" y="116" fill="#8a92a8" font-family="Quicksand" font-size="9">Invoice Date</text><text x="200" y="116" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">3/11/2026</text>
+                <text x="72" y="129" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Type</text><text x="200" y="129" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample-000000-01</text>
+                <text x="72" y="142" fill="#8a92a8" font-family="Quicksand" font-size="9">Serving</text><text x="200" y="142" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Restaurant</text>
+                <text x="72" y="155" fill="#8a92a8" font-family="Quicksand" font-size="9">Meal Period</text><text x="200" y="155" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Lunch</text>
+                <text x="72" y="168" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Date</text><text x="200" y="168" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">3/3/2026</text>
+                <text x="72" y="181" fill="#8a92a8" font-family="Quicksand" font-size="9">Event Location</text><text x="200" y="181" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Location — Sample Site</text>
+                <text x="200" y="192" fill="#374053" font-family="Quicksand" font-size="9">1234 Sample St, Sample Food Court</text>
+                <text x="72" y="205" fill="#8a92a8" font-family="Quicksand" font-size="9">Cashier</text><text x="200" y="205" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Restaurant</text>
+                <text x="72" y="218" fill="#8a92a8" font-family="Quicksand" font-size="9">Commission</text><text x="200" y="218" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">20%</text>
+                <text x="72" y="231" fill="#8a92a8" font-family="Quicksand" font-size="9">Partner</text><text x="200" y="231" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Sample Partner</text>
+                <text x="72" y="244" fill="#8a92a8" font-family="Quicksand" font-size="9">Point of Sale</text><text x="200" y="244" fill="#374053" font-family="Quicksand" font-size="9" font-weight="600">Fooda POS</text>
+
+                <!-- Invoice History table -->
+                <text x="72" y="264" fill="#374053" font-family="Quicksand" font-size="10.5" font-weight="700">Invoice History</text>
+                <line x1="72" y1="270" x2="748" y2="270" stroke="#DAD3C2" stroke-width="1"/>
+                <text x="72" y="283" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Invoice Date</text>
+                <text x="190" y="283" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Section Reference</text>
+                <text x="360" y="283" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Consolidated Invoice</text>
+                <text x="748" y="283" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700" text-anchor="end">Total</text>
+                <line x1="72" y1="288" x2="748" y2="288" stroke="#DAD3C2" stroke-width="1"/>
+                <text x="72" y="303" fill="#374053" font-family="Quicksand" font-size="10">3/11/2026</text>
+                <text x="190" y="303" fill="#374053" font-family="Quicksand" font-size="10">NV0000000</text>
+                <text x="360" y="303" fill="#374053" font-family="Quicksand" font-size="10">CV0000000</text>
+                <text x="748" y="303" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="600">$341.47</text>
+                <line x1="72" y1="310" x2="748" y2="310" stroke="#DAD3C2" stroke-width="1"/>
+                <text x="72" y="323" fill="#374053" font-family="Quicksand" font-size="10" font-weight="700">TOTAL</text>
+                <text x="748" y="323" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="700">$341.47</text>
+
+                <!-- Reconciliation block -->
+                <rect x="72" y="340" width="676" height="220" rx="4" fill="#F1EEE6"/>
+                <text x="90" y="360" fill="#374053" font-family="Quicksand" font-size="11.5" font-weight="700">Sample Restaurant</text>
+                <text x="90" y="374" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-style="italic">This summary is for informational purposes only and is not a part of your invoice.</text>
+
+                <!-- Left column: Sales -->
+                <g class="mt-target" data-target="0">
+                  <text x="110" y="398" fill="#374053" font-family="Quicksand" font-size="11" font-weight="700">Sales</text>
+                  <text x="110" y="416" fill="#8a92a8" font-family="Quicksand" font-size="9.5">44</text>
+                  <text x="126" y="416" fill="#374053" font-family="Quicksand" font-size="10">Food sales</text>
+                  <text x="366" y="416" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="600">$566.00</text>
+                  <text x="126" y="434" fill="#374053" font-family="Quicksand" font-size="10">Tax</text>
+                  <text x="366" y="434" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="600">$38.14</text>
+                  <line x1="110" y1="442" x2="366" y2="442" stroke="#DAD3C2" stroke-width="1"/>
+                  <text x="110" y="456" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Gross Food Sales</text>
+                  <text x="366" y="456" fill="#374053" font-family="Quicksand" font-size="11" text-anchor="end" font-weight="700">$604.14</text>
+                </g>
+
+                <!-- Column divider -->
+                <line x1="408" y1="390" x2="408" y2="480" stroke="#DAD3C2" stroke-width="1"/>
+
+                <!-- Right column: Payments -->
+                <g class="mt-target" data-target="1">
+                  <text x="432" y="398" fill="#374053" font-family="Quicksand" font-size="11" font-weight="700">Payments</text>
+                  <text x="432" y="416" fill="#8a92a8" font-family="Quicksand" font-size="9.5">8</text>
+                  <text x="448" y="416" fill="#374053" font-family="Quicksand" font-size="10">Cash collected</text>
+                  <text x="730" y="416" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="600">$78.98</text>
+                  <text x="432" y="434" fill="#8a92a8" font-family="Quicksand" font-size="9.5">36</text>
+                  <text x="448" y="434" fill="#374053" font-family="Quicksand" font-size="10">Cards collected</text>
+                  <text x="730" y="434" fill="#374053" font-family="Quicksand" font-size="10" text-anchor="end" font-weight="600">$525.16</text>
+                  <line x1="432" y1="442" x2="730" y2="442" stroke="#DAD3C2" stroke-width="1"/>
+                  <text x="432" y="456" fill="#8a92a8" font-family="Quicksand" font-size="8.5" font-weight="700">Gross Food Sales</text>
+                  <text x="730" y="456" fill="#374053" font-family="Quicksand" font-size="11" text-anchor="end" font-weight="700">$604.14</text>
+                </g>
+
+                <!-- ── TARGET 2: The two totals that must match ── -->
+                <g class="mt-target" data-target="2">
+                  <text x="110" y="476" fill="#374053" font-family="Quicksand" font-size="10" font-weight="700">$604.14</text>
+                  <text x="432" y="476" fill="#374053" font-family="Quicksand" font-size="10" font-weight="700">$604.14</text>
+                  <text x="420" y="500" fill="#8a92a8" font-family="Quicksand" font-size="9" text-anchor="middle" font-style="italic">Both totals must match — this confirms your event reconciles cleanly.</text>
+                </g>
+
+                <text x="72" y="578" fill="#8a92a8" font-family="Quicksand" font-size="9" font-style="italic">Page 3 of 3  ·  Event Summary &amp; Reconciliation</text>
+              </svg>
+            </div>
+
+          </div><!-- /mt-stage -->
+
+          <!-- ── Side panel ── -->
+          <div class="mt-side">
+            <div class="mt-side-head">
+              <div>
+                <div class="mt-side-step-tag" id="mt-side-step-tag">Walkthrough</div>
+                <h3 class="mt-side-step-title" id="mt-side-step-title">Click any marker to begin</h3>
+              </div>
+              <button class="mt-side-close" id="mt-side-close" title="Reset">✕</button>
+            </div>
+            <div class="mt-side-body">
+              <span class="mt-side-counter">
+                STEP <span class="mt-counter-num" id="mt-counter-num">— / —</span>
+              </span>
+              <div class="mt-side-instruction" id="mt-side-instruction">
+                <span class="mt-side-empty-arrow">↘</span>
+                <p class="mt-side-empty-title">Click any orange marker on the invoice.</p>
+                <p style="color:var(--text-secondary);">The relevant section will light up and the explanation will appear here. Or hit <strong>Next</strong> to step through in order.</p>
+              </div>
+            </div>
+            <div class="mt-side-nav">
+              <button class="mt-btn mt-btn-ghost" id="mt-prev" disabled>← Back</button>
+              <button class="mt-btn mt-btn-primary" id="mt-next">Start →</button>
+            </div>
+          </div><!-- /mt-side -->
+
+        </div><!-- /mt-walk -->
+      </div><!-- /mt-block-body -->
+    </div><!-- /mt-block -->
+
+    <!-- Page jump pills -->
+    <div class="mt-page-nav">
+      <button class="mt-page-pill active" data-step-idx="0">Page 1 — Summary</button>
+      <button class="mt-page-pill" data-step-idx="1">Page 2 — Event Invoice</button>
+      <button class="mt-page-pill" data-step-idx="2">Page 3 — Reconciliation</button>
+    </div>
+
+
+  </div><!-- /mt-page -->
+</div><!-- /mise-tab-root -->
+
+<script>
+  const STEPS = [
+    {
+      num: 1,
+      eyebrow: "Page 1 · Summary",
+      title: "Your billing summary",
+      stageId: "mt-stage-0",
+      markers: [
+        {
+          mx: 780, my: 152,
+          tx: 640, ty: 158,
+          text: "The <strong>top-line table</strong> is a sales summary for the event: <strong>Meals sold, Food Sales, Sales Tax</strong> (showing who remits it), and <strong>Gross Food Sales</strong>. If \"Sales Tax (Restaurant to remit)\" shows $0.00, Fooda is handling the tax remittance — you don't owe it separately."
+        },
+        {
+          mx: 780, my: 248,
+          tx: 748, ty: 239,
+          text: "The <strong>events table</strong> lists each event being paid out. Each row shows the date, its unique <strong>section reference number (NV#)</strong>, location, market, and that event's payout total — what Fooda is paying you for that event after fees. \"DUE TO SAMPLE RESTAURANT\" at the bottom is the total deposit amount."
+        },
+        {
+          mx: 780, my: 322,
+          tx: 748, ty: 322,
+          text: "The <strong>deposit confirmation</strong> shows the exact dollar amount being sent to your bank via ACH and the date the transfer is initiated. Funds typically post to your account the <strong>following business day</strong> depending on your bank."
+        }
+      ]
+    },
+    {
+      num: 2,
+      eyebrow: "Page 2 · Event Invoice",
+      title: "How your payout is calculated",
+      stageId: "mt-stage-1",
+      markers: [
+        {
+          mx: 780, my: 292,
+          tx: 748, ty: 292,
+          text: "<strong>Payments — Card</strong> is the starting point: everything collected on cards at this event. This is your gross card revenue before any deductions.<br><br><em>Important: cash stays with you at the event and is not part of this deposit calculation</em> — so if you're comparing this to your POS report, the cash side won't appear here."
+        },
+        {
+          mx: 780, my: 390,
+          tx: 748, ty: 390,
+          text: "Four fee lines are subtracted from your card total:<ul><li><strong>In-person processing:</strong> 1.75% on card payments + $0.25 per order</li><li><strong>Online/mobile processing:</strong> 3.5% on those payments + $0.15 per order</li><li><strong>Commission &amp; event fee:</strong> your agreed rate on food sales after refunds, plus a flat $5.00 event fee</li><li><strong>Sales tax:</strong> passed through to the tax authority — not a cost to you</li></ul>Every line shows the rate and the dollar base so you can verify every charge."
+        },
+        {
+          mx: 780, my: 494,
+          tx: 748, ty: 494,
+          text: "The bold <strong>DUE TO SAMPLE RESTAURANT</strong> line is your payout for this specific event. This should match the total in the events table on page 1. If you have multiple events in the billing period, there's one of these pages per event — and they all add up to your deposit."
+        }
+      ]
+    },
+    {
+      num: 3,
+      eyebrow: "Page 3 · Reconciliation",
+      title: "The sales check",
+      stageId: "mt-stage-2",
+      markers: [
+        {
+          mx: 48, my: 430,
+          tx: 110, ty: 416,
+          text: "The <strong>Sales column</strong> is the menu side: what was sold. It adds <strong>food sales + tax = Gross Food Sales</strong>. The food sales figure here is the same number your commission on page 2 was calculated against."
+        },
+        {
+          mx: 780, my: 430,
+          tx: 730, ty: 416,
+          text: "The <strong>Payments column</strong> is the till side: how it was paid. It adds <strong>cash collected + cards collected = Gross Food Sales</strong>. Cash appears here even though it doesn't flow through the deposit — this reconciliation accounts for every dollar."
+        },
+        {
+          mx: 420, my: 540,
+          tx: 420, ty: 500,
+          text: "Both <strong>Gross Food Sales</strong> totals must match. When they do, the event reconciles cleanly. If you ever see a discrepancy, contact your Fooda account manager with the <strong>section reference number (NV#)</strong> and it will be corrected."
+        }
+      ]
+    }
+  ];
+
+  // ── Flatten all markers into a linear sequence ──
+  const SEQUENCE = [];
+  STEPS.forEach((step, sIdx) => {
+    step.markers.forEach((m, mIdx) => {
+      SEQUENCE.push({ stepIndex: sIdx, markerIndex: mIdx, stageId: step.stageId,
+        eyebrow: step.eyebrow, title: step.title, mx: m.mx, my: m.my, text: m.text });
+    });
+  });
+
+  let currentSeqIndex = -1;
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  // ── Inject markers + connector lines into each step's SVG ──
+  STEPS.forEach((step, sIdx) => {
+    const stage = document.getElementById(step.stageId);
+    if (!stage) return;
+    const svg = stage.querySelector('svg');
+    if (!svg) return;
+    step.markers.forEach((m, mIdx) => {
+      // Connector line
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', m.mx); line.setAttribute('y1', m.my);
+      line.setAttribute('x2', m.tx); line.setAttribute('y2', m.ty);
+      line.setAttribute('class', 'mt-connector');
+      line.setAttribute('data-step', sIdx);
+      line.setAttribute('data-marker', mIdx);
+      svg.appendChild(line);
+
+      // Marker group: pulse + circle + number
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('class', 'mt-svg-marker-group');
+      g.setAttribute('data-step', sIdx);
+      g.setAttribute('data-marker', mIdx);
+      g.setAttribute('transform', `translate(${m.mx}, ${m.my})`);
+
+      const pulse = document.createElementNS(SVG_NS, 'circle');
+      pulse.setAttribute('cx', 0); pulse.setAttribute('cy', 0);
+      pulse.setAttribute('r', 20); pulse.setAttribute('fill', '#F3634A');
+      pulse.setAttribute('class', 'mt-svg-marker-pulse');
+      g.appendChild(pulse);
+
+      const ring = document.createElementNS(SVG_NS, 'circle');
+      ring.setAttribute('cx', 0); ring.setAttribute('cy', 0);
+      ring.setAttribute('r', 20); ring.setAttribute('fill', '#F3634A');
+      ring.setAttribute('stroke', '#fff'); ring.setAttribute('stroke-width', '3');
+      ring.setAttribute('class', 'mt-svg-marker-circle');
+      g.appendChild(ring);
+
+      const txt = document.createElementNS(SVG_NS, 'text');
+      txt.setAttribute('x', 0); txt.setAttribute('y', 7);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('font-family', 'Quicksand');
+      txt.setAttribute('font-size', 16);
+      txt.setAttribute('font-weight', 700);
+      txt.setAttribute('fill', '#fff');
+      txt.setAttribute('class', 'mt-svg-marker-text');
+      txt.setAttribute('pointer-events', 'none');
+      txt.textContent = mIdx + 1;
+      g.appendChild(txt);
+
+      g.addEventListener('click', () => {
+        const seqIdx = SEQUENCE.findIndex(s => s.stepIndex === sIdx && s.markerIndex === mIdx);
+        if (seqIdx >= 0) goToSeqIndex(seqIdx);
+      });
+      svg.appendChild(g);
+    });
+  });
+
+  function showStage(stepIdx) {
+    document.querySelectorAll('.mt-stage-svg').forEach(s => s.classList.remove('active'));
+    const stage = document.getElementById(STEPS[stepIdx].stageId);
+    if (stage) stage.classList.add('active');
+  }
+
+  function setActive(stepIdx, markerIdx) {
+    document.querySelectorAll('.mt-svg-marker-group').forEach(g => g.classList.remove('active'));
+    document.querySelectorAll('.mt-target').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mt-connector').forEach(c => c.classList.remove('active'));
+    const stage = document.getElementById(STEPS[stepIdx].stageId);
+    if (!stage) return;
+    const g = stage.querySelector(`.mt-svg-marker-group[data-step="${stepIdx}"][data-marker="${markerIdx}"]`);
+    if (g) g.classList.add('active');
+    const t = stage.querySelector(`.mt-target[data-target="${markerIdx}"]`);
+    if (t) t.classList.add('active');
+    const c = stage.querySelector(`.mt-connector[data-step="${stepIdx}"][data-marker="${markerIdx}"]`);
+    if (c) c.classList.add('active');
+  }
+
+  function goToSeqIndex(idx) {
+    if (idx < 0 || idx >= SEQUENCE.length) return;
+    const prev = currentSeqIndex;
+    currentSeqIndex = idx;
+    const cur = SEQUENCE[idx];
+    if (prev < 0 || SEQUENCE[prev].stepIndex !== cur.stepIndex) {
+      showStage(cur.stepIndex);
+      // Update page pills
+      document.querySelectorAll('.mt-page-pill').forEach(p => {
+        p.classList.toggle('active', parseInt(p.dataset.stepIdx) === cur.stepIndex);
+      });
+    }
+    setActive(cur.stepIndex, cur.markerIndex);
+
+    document.getElementById('mt-side-step-tag').textContent = cur.eyebrow;
+    document.getElementById('mt-side-step-title').textContent = cur.title;
+    document.getElementById('mt-counter-num').textContent = `${idx + 1} / ${SEQUENCE.length}`;
+    document.getElementById('mt-side-instruction').innerHTML = `<p style="margin:0;">${cur.text}</p>`;
+
+    document.getElementById('mt-prev').disabled = (idx === 0);
+    document.getElementById('mt-next').textContent = (idx === SEQUENCE.length - 1) ? 'Done ✓' : 'Next →';
+  }
+
+  function jumpToStep(stepIdx) {
+    const seqIdx = SEQUENCE.findIndex(s => s.stepIndex === stepIdx);
+    if (seqIdx >= 0) {
+      goToSeqIndex(seqIdx);
+      document.querySelector('.mt-block').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function resetWalkthrough() {
+    currentSeqIndex = -1;
+    showStage(0);
+    document.querySelectorAll('.mt-svg-marker-group').forEach(g => g.classList.remove('active'));
+    document.querySelectorAll('.mt-target').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mt-connector').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.mt-page-pill').forEach((p, i) => p.classList.toggle('active', i === 0));
+    document.getElementById('mt-side-step-tag').textContent = 'Walkthrough';
+    document.getElementById('mt-side-step-title').textContent = 'Click any marker to begin';
+    document.getElementById('mt-counter-num').textContent = '— / —';
+    document.getElementById('mt-side-instruction').innerHTML = `
+      <span class="mt-side-empty-arrow">↘</span>
+      <p class="mt-side-empty-title" style="margin:0 0 6px;">Click any orange marker on the invoice.</p>
+      <p style="margin:0; color:var(--text-secondary);">The relevant section will light up and the explanation will appear here. Or hit <strong>Next</strong> to step through in order.</p>
+    `;
+    document.getElementById('mt-prev').disabled = true;
+    document.getElementById('mt-next').textContent = 'Start →';
+  }
+
+  document.getElementById('mt-next').addEventListener('click', () => {
+    if (currentSeqIndex === -1) goToSeqIndex(0);
+    else if (currentSeqIndex < SEQUENCE.length - 1) goToSeqIndex(currentSeqIndex + 1);
+    else resetWalkthrough();
+  });
+  document.getElementById('mt-prev').addEventListener('click', () => {
+    if (currentSeqIndex > 0) goToSeqIndex(currentSeqIndex - 1);
+  });
+  document.getElementById('mt-side-close').addEventListener('click', resetWalkthrough);
+
+  // Page pill jump buttons
+  document.querySelectorAll('.mt-page-pill').forEach(p => {
+    p.addEventListener('click', () => jumpToStep(parseInt(p.dataset.stepIdx)));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const block = document.querySelector('.mt-block');
+    const rect = block.getBoundingClientRect();
+    const inView = rect.top < window.innerHeight && rect.bottom > 0;
+    if (!inView) return;
+    if (e.key === 'ArrowRight') document.getElementById('mt-next').click();
+    else if (e.key === 'ArrowLeft') document.getElementById('mt-prev').click();
+    else if (e.key === 'Escape') resetWalkthrough();
+  });
+
+  resetWalkthrough();
+</script>
+
+</body>
+</html>
